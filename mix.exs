@@ -28,6 +28,8 @@ defmodule Jabber.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [
+      {:exml, github: "paulgray/exml"},
+    ]
   end
 end

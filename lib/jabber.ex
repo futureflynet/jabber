@@ -9,6 +9,7 @@ defmodule Jabber do
     children = [
       # Define workers and child supervisors to be supervised
       # worker(Jabber.Worker, [arg1, arg2, arg3]),
+      supervisor(Jabber.Component.Supervisor, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
