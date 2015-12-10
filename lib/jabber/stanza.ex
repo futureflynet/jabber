@@ -32,5 +32,17 @@ defmodule Jabber.Stanza do
   def new(xmlel(name: "iq", attrs: attrs, children: children)) do
     %Iq{attrs: attrs, children: children}
   end
+
+  def to_xml(%Message{} = stanza) do
+    xmlel(name: "message", attrs: stanza.attrs, children: stanza.children)
+  end
+
+  def to_xml(%Presence{} = stanza) do
+    xmlel(name: "presence", attrs: stanza.attrs, children: stanza.children)
+  end
+
+  def to_xml(%Iq{} = stanza) do
+    xmlel(name: "iq", attrs: stanza.attrs, children: stanza.children)
+  end
   
 end
