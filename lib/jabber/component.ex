@@ -1,5 +1,8 @@
 defmodule Jabber.Component do
 
+  @callback stream_started(state :: term) :: {:ok, term}
+  @callback stanza_received(state :: term, stanza :: term) :: {:ok, term}
+  
   defmacro __using__(_opts) do
     quote do
       use GenServer
@@ -31,10 +34,26 @@ defmodule Jabber.Component do
         |> start_stream(jid)
         |> handshake(password)
         
+        {:ok, state, 0}
+      end
+
+      def stream_started(state) do
+        # override this
+        {:ok, state}
+      end
+      
+      def stanza_received(state, _stanza) do
+        # override this
         {:ok, state}
       end
 
       ## GenServer API
+
+      def handle_info(:timeout, state) do
+        # component has started
+        {:ok, state} = stream_started(state)
+        {:noreply, state}
+      end
       
       def handle_info(xmlel() = xml, state) do
         stanza = Stanza.new(xml)
@@ -83,6 +102,8 @@ defmodule Jabber.Component do
             recv(name)
         end
       end
+      
+      defoverridable [stream_started: 1, stanza_received: 2]
     end
   end
 end
