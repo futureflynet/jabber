@@ -37,7 +37,7 @@ defmodule JabberStanzaTest do
     assert msg.type == "chat"
     assert msg.body == "content"
   end
-
+  
   test "iq to xml" do
     iq_xml = %Iq{id: "test_id", to: "to@test.host", from: "from@test.host", type: "get"}
     |> Stanza.to_xml

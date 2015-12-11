@@ -37,11 +37,10 @@ defmodule Jabber.Stanza do
     {"from", from} = List.keyfind(attrs, "from", 0, {"from", nil})
     {"type", type} = List.keyfind(attrs, "type", 0, {"type", nil})
     
-    attrs
-    |> List.keydelete("id", 0)
-    |> List.keydelete("to", 0)
-    |> List.keydelete("from", 0)
-    |> List.keydelete("type", 0)
+    attrs = List.keydelete(attrs, "id", 0)
+    attrs = List.keydelete(attrs, "to", 0)
+    attrs = List.keydelete(attrs, "from", 0)
+    attrs = List.keydelete(attrs, "type", 0)
     
     body = get_child(xml, "body") |> get_cdata
     
@@ -58,12 +57,11 @@ defmodule Jabber.Stanza do
     {"to", to}     = List.keyfind(attrs, "to", 0, {"to", nil})
     {"from", from} = List.keyfind(attrs, "from", 0, {"from", nil})
     {"type", type} = List.keyfind(attrs, "type", 0, {"type", nil})
-    
-    attrs
-    |> List.keydelete("id", 0)
-    |> List.keydelete("to", 0)
-    |> List.keydelete("from", 0)
-    |> List.keydelete("type", 0)
+
+    attrs = List.keydelete(attrs, "id", 0)
+    attrs = List.keydelete(attrs, "to", 0)
+    attrs = List.keydelete(attrs, "from", 0)
+    attrs = List.keydelete(attrs, "type", 0)
     
     %Iq{id: id, to: to, from: from, type: type,
         extra_attrs: attrs, children: children}
