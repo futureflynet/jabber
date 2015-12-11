@@ -85,7 +85,7 @@ defmodule Jabber.Stanza do
   end
 
   def to_xml(%Iq{} = iq) do
-    extra_attrs = Enum.map(iq.extra_attrs, fn (k, v) -> {to_string(k), v} end)
+    extra_attrs = Enum.map(iq.extra_attrs, fn {k, v} -> {to_string(k), v} end)
     attrs = [{"id", iq.id}, {"to", iq.to},
              {"from", iq.from}, {"type", iq.type}] ++ extra_attrs
     xmlel(name: "iq", attrs: attrs, children: iq.children)
