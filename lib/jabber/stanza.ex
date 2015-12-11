@@ -19,7 +19,7 @@ defmodule Jabber.Stanza do
     
     def to_result(%Iq{type: type} = iq, result \\ []) when type == "get" or type == "set" do
       [child] = iq.children
-      child = xmlel(child, children: [result])
+      child = xmlel(child, children: result)
       %Iq{iq | to: iq.from, from: iq.to, type: "result", children: [child]}
     end
   end
