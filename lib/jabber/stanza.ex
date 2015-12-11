@@ -71,8 +71,10 @@ defmodule Jabber.Stanza do
   
   def to_xml(%Message{} = msg) do
     extra_attrs = Enum.map(msg.extra_attrs, fn (k, v) -> {to_string(k), v} end)
-    attrs = [{"id", msg.id}, {"to", msg.to},
-             {"from", msg.from}, {"type", msg.type}] ++ extra_attrs
+    attrs = [{"to", msg.to}, {"from", msg.from}, {"type", msg.type}] ++ extra_attrs
+    if msg.id != nil do
+      attrs = [{"id", msg.id} | attrs]
+    end
     body = xmlel(name: "body", children: [xmlcdata(content: msg.body)])
     children = [body] ++ msg.extra_children
     xmlel(name: "message", attrs: attrs, children: children)
