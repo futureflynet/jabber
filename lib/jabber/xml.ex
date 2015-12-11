@@ -20,6 +20,7 @@ defmodule Jabber.Xml do
         :exml_query.subelement(element, name, default)
       end
 
+      def get_cdata(nil), do: ""
       def get_cdata(element) do
         :exml_query.cdata(element)
       end
