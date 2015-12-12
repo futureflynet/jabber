@@ -1,0 +1,10 @@
+sudo: false
+language: elixir
+notifications:
+  recipients:
+    - teemu.harju@futurefly.net
+elixir:
+  - 1.1.1
+otp_release:
+  - 17.0
+  - 18.0
