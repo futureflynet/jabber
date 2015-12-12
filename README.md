@@ -1,5 +1,7 @@
 # Jabber
 
+[![Build Status](https://travis-ci.org/futureflynet/jabber.svg)](https://travis-ci.org/futureflynet/jabber)
+
 **TODO: Add description**
 
 ## Installation
