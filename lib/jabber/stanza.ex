@@ -2,28 +2,10 @@ defmodule Jabber.Stanza do
 
   use Jabber.Xml
 
-  defmodule Message do
-    defstruct(id: nil, to: nil, from: nil, type: "chat", body: "",
-              extra_attrs: [], extra_children: [])
-  end
-
-  defmodule Presence do
-    defstruct attrs: [], children: []
-  end
-
-  defmodule Iq do
-    use Jabber.Xml
+  alias Jabber.Stanza.Iq
+  alias Jabber.Stanza.Message
+  alias Jabber.Stanza.Presence
     
-    defstruct(id: nil, to: nil, from: nil, type: nil,
-              extra_attrs: [], children: [])
-    
-    def to_result(%Iq{type: type} = iq, result \\ []) when type == "get" or type == "set" do
-      [child] = iq.children
-      child = xmlel(child, children: result)
-      %Iq{iq | to: iq.from, from: iq.to, type: "result", children: [child]}
-    end
-  end
-  
   def stream(to, xmlns) do
     xmlstreamstart(
       name: "stream:stream",
