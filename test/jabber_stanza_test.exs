@@ -37,6 +37,19 @@ defmodule JabberStanzaTest do
     assert msg.type == "chat"
     assert msg.body == "content"
   end
+
+  test "message attributes" do
+    msg = %Message{attrs: [{"to", "to@test.host"}]}
+    msg_xml = Stanza.to_xml(msg)
+    assert msg_xml == xmlel(name: "message", attrs: [{"type", "chat"}])
+    
+    msg = %Message{to: "to@test.host", from: "from@test.host", id: "test_id",
+                   attrs: [{"to", "to"}, {"from", "from"}, {"id", "id"}]}
+    msg_xml = Stanza.to_xml(msg)
+    assert msg_xml == {:xmlel, "message",
+                       [{"from", "from@test.host"}, {"id", "test_id"},
+                        {"to", "to@test.host"}, {"type", "chat"}], []}
+  end
   
   test "iq to xml" do
     iq_xml = %Iq{id: "test_id", to: "to@test.host", from: "from@test.host", type: "get"}

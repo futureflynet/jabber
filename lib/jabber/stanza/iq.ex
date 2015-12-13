@@ -5,7 +5,7 @@ defmodule Jabber.Stanza.Iq do
   alias Jabber.Stanza.Iq
 
   defstruct(id: nil, to: nil, from: nil, type: nil,
-            extra_attrs: [], children: [])
+            attrs: [], children: [])
 
 
   def to_result(%Iq{type: type} = iq, result \\ []) when type == "get" or type == "set" do

@@ -27,7 +27,7 @@ defmodule Jabber.Stanza do
     body = get_child(xml, "body") |> get_cdata
     
     %Message{id: id, to: to, from: from, type: type, body: body,
-             extra_attrs: attrs, extra_children: children}
+             attrs: attrs, children: children}
   end
 
   def new(xmlel(name: "presence", attrs: attrs, children: children)) do
@@ -46,17 +46,23 @@ defmodule Jabber.Stanza do
     attrs = List.keydelete(attrs, "type", 0)
     
     %Iq{id: id, to: to, from: from, type: type,
-        extra_attrs: attrs, children: children}
+        attrs: attrs, children: children}
   end
   
   def to_xml(%Message{} = msg) do
-    extra_attrs = Enum.map(msg.extra_attrs, fn (k, v) -> {to_string(k), v} end)
-    attrs = [{"to", msg.to}, {"from", msg.from}, {"type", msg.type}] ++ extra_attrs
-    if msg.id != nil do
-      attrs = [{"id", msg.id} | attrs]
+    attrs = attrs_to_binary(msg.attrs, msg.id, msg.to, msg.from, msg.type)
+    if msg.body != nil do
+      body = xmlel(name: "body", children: [xmlcdata(content: msg.body)])
+      children = Enum.filter(
+        msg.children,
+        fn
+          xmlel(name: "body") -> false
+           _ -> true
+        end)
+      children = [body|children]
+    else
+      children = msg.children
     end
-    body = xmlel(name: "body", children: [xmlcdata(content: msg.body)])
-    children = [body] ++ msg.extra_children
     xmlel(name: "message", attrs: attrs, children: children)
   end
 
@@ -65,10 +71,20 @@ defmodule Jabber.Stanza do
   end
 
   def to_xml(%Iq{} = iq) do
-    extra_attrs = Enum.map(iq.extra_attrs, fn {k, v} -> {to_string(k), v} end)
-    attrs = [{"id", iq.id}, {"to", iq.to},
-             {"from", iq.from}, {"type", iq.type}] ++ extra_attrs
+    attrs = attrs_to_binary(iq.attrs, iq.id, iq.to, iq.from, iq.type)
     xmlel(name: "iq", attrs: attrs, children: iq.children)
+  end
+
+  ## private API
+
+  defp attrs_to_binary(attrs, id, to, from, type) do
+    attrs
+    |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
+    |> Map.put("id", id)
+    |> Map.put("to", to)
+    |> Map.put("from", from)
+    |> Map.put("type", type)
+    |> Enum.filter(fn {_k, v} -> v != nil end)
   end
   
 end
