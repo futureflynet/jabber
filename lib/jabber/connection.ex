@@ -4,7 +4,7 @@ defmodule Jabber.Connection do
 
   require Logger
   
-  @initial_state %{socket: nil, pid: nil, parser: nil}
+  @initial_state %{socket: nil, component_pid: nil, parser: nil}
 
   ## public API
   
@@ -27,23 +27,26 @@ defmodule Jabber.Connection do
   ## :gen_fsm API
   
   def init(opts) do
-    jid   = Keyword.fetch!(opts, :jid)
-    host  = Keyword.get(opts, :host, "localhost") |> String.to_char_list
-    port  = Keyword.get(opts, :port, 8888)
-    pid   = Keyword.fetch!(opts, :pid)
-    state = @initial_state
+    jid       = Keyword.fetch!(opts, :jid)
+    host      = Keyword.get(opts, :host, "localhost") |> String.to_char_list
+    port      = Keyword.get(opts, :port, 8888)
+    pid       = Keyword.fetch!(opts, :pid)
+    state     = @initial_state
 
+    # trap exits
+    Process.flag(:trap_exit, true)
+    
     socket_opts = [{:active, :once}, :binary, {:packet, 0}]
     {:ok, socket} = :gen_tcp.connect(host, port, socket_opts)
     {:ok, parser} = :exml_stream.new_parser
-    state = %{state | socket: socket, pid: pid, parser: parser}
+    state = %{state | socket: socket, component_pid: pid, parser: parser}
     
     Logger.info "Component #{jid} connected to #{host}:#{port}."
     
     {:ok, :connected, state}
   end
 
-  def handle_info({:tcp, socket, data}, statename, %{pid: pid} = state) do
+  def handle_info({:tcp, socket, data}, statename, %{component_pid: pid} = state) do
     Logger.debug "RECV: #{inspect data}"
     {:ok, parser, elements} = :exml_stream.parse(state.parser, data)
     Enum.each(elements, fn element ->
@@ -58,6 +61,12 @@ defmodule Jabber.Connection do
     {:stop, :normal, state}
   end
 
+  def handle_info({:EXIT, pid, reason}, statename,
+                  %{component_pid: component_pid} = state) when component_pid == pid do
+    ## got EXIT from component process so we will terminate as well
+    {:stop, :normal, statename, state}
+  end
+  
   def handle_event(_event, _statename, state) do
     {:stop, {:error, :not_implemented}, state}
   end

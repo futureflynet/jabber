@@ -6,11 +6,15 @@ defmodule Jabber.Stanza do
   alias Jabber.Stanza.Message
   alias Jabber.Stanza.Presence
     
-  def stream(to, xmlns) do
+  def stream_start(to, xmlns) do
     xmlstreamstart(
       name: "stream:stream",
       attrs: [{"xmlns:stream", "http://etherx.jabber.org/streams"},
               {"xmlns", xmlns}, {"to", to}])
+  end
+
+  def stream_end do
+    xmlstreamend(name: "stream:stream")
   end
 
   def new(xmlel(name: "message", attrs: attrs, children: children) = xml) do
