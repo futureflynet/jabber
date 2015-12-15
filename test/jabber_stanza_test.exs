@@ -8,15 +8,17 @@ defmodule JabberStanzaTest do
   alias Jabber.Stanza.Presence
   alias Jabber.Stanza.Iq
   alias Jabber.Stanza
+  alias Jabber.Jid
 
   test "message to xml" do
-    msg_xml = %Message{id: "test_id", to: "to@test.host",
-                       from: "from@test.host", body: "hello"}
+    msg_xml = %Message{id: "test_id", to: Jid.new("to@test.host"),
+                       from: Jid.new("from@test.host"), body: "hello"}
     |> Stanza.to_xml
 
     assert Record.is_record(msg_xml, :xmlel)
     
     attrs = xmlel(msg_xml, :attrs)
+    
     {"id", "test_id"}          = List.keyfind(attrs, "id", 0)
     {"to", "to@test.host"}     = List.keyfind(attrs, "to", 0)
     {"from", "from@test.host"} = List.keyfind(attrs, "from", 0)

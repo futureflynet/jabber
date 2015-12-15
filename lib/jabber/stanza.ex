@@ -53,8 +53,13 @@ defmodule Jabber.Stanza do
     %Iq{id: id, to: to, from: from, type: type,
         attrs: attrs, children: children}
   end
+
+  def to_xml(%{to: to, from: from} = stanza) do
+    stanza_to_xml(%{stanza | to: to_string(to), from: to_string(from)})
+  end
+  def to_xml(stanza), do: stanza_to_xml(stanza)
   
-  def to_xml(%Message{} = msg) do
+  defp stanza_to_xml(%Message{} = msg) do
     attrs = attrs_to_binary(msg.attrs, msg.id, msg.to, msg.from, msg.type)
 
     children = msg.children
@@ -64,11 +69,11 @@ defmodule Jabber.Stanza do
     xmlel(name: "message", attrs: attrs, children: children)
   end
 
-  def to_xml(%Presence{} = stanza) do
+  defp stanza_to_xml(%Presence{} = stanza) do
     xmlel(name: "presence", attrs: stanza.attrs, children: stanza.children)
   end
 
-  def to_xml(%Iq{} = iq) do
+  defp stanza_to_xml(%Iq{} = iq) do
     attrs = attrs_to_binary(iq.attrs, iq.id, iq.to, iq.from, iq.type)
     xmlel(name: "iq", attrs: attrs, children: iq.children)
   end
@@ -82,7 +87,7 @@ defmodule Jabber.Stanza do
     |> Map.put("to", to)
     |> Map.put("from", from)
     |> Map.put("type", type)
-    |> Enum.filter(fn {_k, v} -> v != nil end)
+    |> Enum.filter(fn {_k, v} -> v != nil and v != "" end)
   end
 
   defp add_child(children, _name, nil), do: children
