@@ -1,6 +1,7 @@
 defmodule Jabber.Component do
 
   @callback stream_started(state :: term) :: {:ok, term}
+  @callback stream_authenticated(state :: term) :: {:ok, term}
   @callback stanza_received(state :: term, stanza :: term) :: {:ok, term}
   
   defmacro __using__(_opts) do
@@ -26,6 +27,11 @@ defmodule Jabber.Component do
       ## component behaviour callbacks
       
       def stream_started(state) do
+        # override this
+        {:ok, state}
+      end
+
+      def stream_authenticated(state) do
         # override this
         {:ok, state}
       end
@@ -56,6 +62,7 @@ defmodule Jabber.Component do
       def authenticating(:timeout, state) do
         case do_handshake(state) do
           {:ok, state} ->
+            {:ok, state} = stream_authenticated(state)
             {:next_state, :authenticated, state}
           {:error, reason} ->
             {:stop, reason, state}
@@ -150,7 +157,7 @@ defmodule Jabber.Component do
         end
       end
       
-      defoverridable [stream_started: 1, stanza_received: 2]
+      defoverridable [stream_started: 1, stream_authenticated: 1, stanza_received: 2]
     end
   end
 end
