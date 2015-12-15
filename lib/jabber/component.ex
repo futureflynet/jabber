@@ -20,7 +20,7 @@ defmodule Jabber.Component do
                        password: nil}
 
       def start_link(opts) do
-        :gen_fsm.start_link(__MODULE__, opts, [])
+        :gen_fsm.start_link(__MODULE__, opts, name: __MODULE__)
       end
       
       ## component behaviour callbacks
