@@ -18,20 +18,21 @@ defmodule Jabber.Stanza do
   end
 
   def new(xmlel(name: "message", attrs: attrs, children: children) = xml) do
-    {"id", id}     = List.keyfind(attrs, "id", 0, {"id", nil})
-    {"to", to}     = List.keyfind(attrs, "to", 0, {"to", nil})
-    {"from", from} = List.keyfind(attrs, "from", 0, {"from", nil})
-    {"type", type} = List.keyfind(attrs, "type", 0, {"type", nil})
+    {"id", id}       = List.keyfind(attrs, "id", 0, {"id", nil})
+    {"to", to}       = List.keyfind(attrs, "to", 0, {"to", nil})
+    {"from", from}   = List.keyfind(attrs, "from", 0, {"from", nil})
+    {"type", type}   = List.keyfind(attrs, "type", 0, {"type", nil})
     
     attrs = List.keydelete(attrs, "id", 0)
     attrs = List.keydelete(attrs, "to", 0)
     attrs = List.keydelete(attrs, "from", 0)
     attrs = List.keydelete(attrs, "type", 0)
     
-    body = get_child(xml, "body") |> get_cdata
+    body   = get_child(xml, "body") |> get_cdata
+    thread = get_child(xml, "thread") |> get_cdata 
     
     %Message{id: id, to: to, from: from, type: type, body: body,
-             attrs: attrs, children: children}
+             thread: thread, attrs: attrs, children: children}
   end
 
   def new(xmlel(name: "presence", attrs: attrs, children: children)) do
@@ -55,18 +56,11 @@ defmodule Jabber.Stanza do
   
   def to_xml(%Message{} = msg) do
     attrs = attrs_to_binary(msg.attrs, msg.id, msg.to, msg.from, msg.type)
-    if msg.body != nil do
-      body = xmlel(name: "body", children: [xmlcdata(content: msg.body)])
-      children = Enum.filter(
-        msg.children,
-        fn
-          xmlel(name: "body") -> false
-           _ -> true
-        end)
-      children = [body|children]
-    else
-      children = msg.children
-    end
+
+    children = msg.children
+    |> add_child("body", msg.body)
+    |> add_child("thread", msg.thread)
+    
     xmlel(name: "message", attrs: attrs, children: children)
   end
 
@@ -89,6 +83,12 @@ defmodule Jabber.Stanza do
     |> Map.put("from", from)
     |> Map.put("type", type)
     |> Enum.filter(fn {_k, v} -> v != nil end)
+  end
+
+  defp add_child(children, _name, nil), do: children
+  defp add_child(children, name, content) do
+    child_xml = xmlel(name: name, children: [xmlcdata(content: content)])
+    [child_xml|children]
   end
   
 end

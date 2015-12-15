@@ -7,7 +7,7 @@ defmodule Jabber.Component.Supervisor do
 
   def init([]) do
     children = [
-      worker(Jabber.Component, [], restart: :transient)
+      worker(Jabber.Component, [conn: Jabber.Connection], restart: :transient)
     ]
 
     supervise(children, strategy: :simple_one_for_one)

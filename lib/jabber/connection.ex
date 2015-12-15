@@ -64,7 +64,7 @@ defmodule Jabber.Connection do
   def handle_info({:EXIT, pid, reason}, statename,
                   %{component_pid: component_pid} = state) when component_pid == pid do
     ## got EXIT from component process so we will terminate as well
-    {:stop, :normal, statename, state}
+    {:stop, reason, statename, state}
   end
   
   def handle_event(_event, _statename, state) do

@@ -88,11 +88,6 @@ defmodule Jabber.Component do
         state = stanza_received(state, stanza)
         {:next_state, statename, state}
       end
-
-      def handle_info(msg, statename, state) do
-        Logger.error "MESSAGE: #{inspect msg}"
-        {:next_state, statename, state}
-      end
       
       def terminate(_reason, _statename, %{conn: conn, conn_pid: conn_pid} = state) do
         stream_xml = Stanza.stream_end
