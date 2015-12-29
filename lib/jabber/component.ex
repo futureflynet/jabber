@@ -20,8 +20,8 @@ defmodule Jabber.Component do
                        jid: nil, stream_id: nil,
                        password: nil}
 
-      def start_link(opts) do
-        :gen_fsm.start_link(__MODULE__, opts, name: __MODULE__)
+      def start_link(args) do
+        :gen_fsm.start_link({:local, __MODULE__}, __MODULE__, args, [])
       end
       
       ## component behaviour callbacks
