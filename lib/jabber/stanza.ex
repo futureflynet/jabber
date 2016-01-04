@@ -2,6 +2,7 @@ defmodule Jabber.Stanza do
 
   use Jabber.Xml
 
+  alias Jabber.Jid
   alias Jabber.Stanza.Iq
   alias Jabber.Stanza.Message
   alias Jabber.Stanza.Presence
@@ -31,12 +32,21 @@ defmodule Jabber.Stanza do
     body   = get_child(xml, "body") |> get_cdata
     thread = get_child(xml, "thread") |> get_cdata 
     
-    %Message{id: id, to: to, from: from, type: type, body: body,
+    %Message{id: id, to: Jid.new(to), from: Jid.new(from), type: type, body: body,
              thread: thread, attrs: attrs, children: children}
   end
 
   def new(xmlel(name: "presence", attrs: attrs, children: children)) do
-    %Presence{attrs: attrs, children: children}
+    {"to", to}     = List.keyfind(attrs, "to", 0, {"to", nil})
+    {"from", from} = List.keyfind(attrs, "from", 0, {"from", nil})
+    {"type", type} = List.keyfind(attrs, "type", 0, {"type", nil})
+
+    attrs = List.keydelete(attrs, "to", 0)
+    attrs = List.keydelete(attrs, "from", 0)
+    attrs = List.keydelete(attrs, "type", 0)
+    
+    %Presence{to: Jid.new(to), from: Jid.new(from), type: type,
+              attrs: attrs, children: children}
   end
 
   def new(xmlel(name: "iq", attrs: attrs, children: children)) do
@@ -50,7 +60,7 @@ defmodule Jabber.Stanza do
     attrs = List.keydelete(attrs, "from", 0)
     attrs = List.keydelete(attrs, "type", 0)
     
-    %Iq{id: id, to: to, from: from, type: type,
+    %Iq{id: id, to: Jid.new(to), from: Jid.new(from), type: type,
         attrs: attrs, children: children}
   end
 
@@ -69,13 +79,18 @@ defmodule Jabber.Stanza do
     xmlel(name: "message", attrs: attrs, children: children)
   end
 
-  defp stanza_to_xml(%Presence{} = stanza) do
-    xmlel(name: "presence", attrs: stanza.attrs, children: stanza.children)
+  defp stanza_to_xml(%Presence{} = presence) do
+    attrs = attrs_to_binary(presence.attrs, nil, presence.to, presence.from, presence.type)
+    xmlel(name: "presence", attrs: attrs, children: presence.children)
   end
 
   defp stanza_to_xml(%Iq{} = iq) do
     attrs = attrs_to_binary(iq.attrs, iq.id, iq.to, iq.from, iq.type)
     xmlel(name: "iq", attrs: attrs, children: iq.children)
+  end
+
+  def has_child?(stanza, name, ns) do
+    Enum.member?(stanza.children, xmlel(name: name, attrs: [{"xmlns", ns}]))
   end
 
   ## private API

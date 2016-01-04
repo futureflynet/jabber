@@ -1,7 +1,8 @@
 defmodule Jabber.Jid do
 
   defstruct id: nil, domain: nil, resource: nil
-  
+
+  def new(nil), do: nil
   def new(jid_str) do
     {id, rest}         = id_from_string(jid_str)
     {domain, resource} = domain_resource_from_string(rest)

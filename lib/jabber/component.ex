@@ -18,12 +18,12 @@ defmodule Jabber.Component do
       @stream_ns     "jabber:component:accept"
       @initial_state %{conn: nil, conn_pid: nil,
                        jid: nil, stream_id: nil,
-                       password: nil}
+                       password: nil, opts: []}
 
       def start_link(args) do
-        :gen_fsm.start_link({:local, __MODULE__}, __MODULE__, args, [])
+        :gen_fsm.start_link(__MODULE__, args, [])
       end
-      
+
       ## component behaviour callbacks
       
       def stream_started(state) do
@@ -71,19 +71,21 @@ defmodule Jabber.Component do
       
       ## :gen_fsm API
 
-      def init(opts) do
-        jid      = Keyword.fetch!(opts, :jid)
-        password = Keyword.fetch!(opts, :password)
-        conn     = Keyword.fetch!(opts, :conn)
+      def init(args) do
+        jid      = Keyword.fetch!(args, :jid)
+        password = Keyword.fetch!(args, :password)
+        conn     = Keyword.fetch!(args, :conn)
+        opts     = Keyword.fetch!(args, :opts)
 
         # trap exits
         Process.flag(:trap_exit, true)
         
         # start connection and link to it
-        {:ok, conn_pid} = conn.start([{:pid, self} | opts])
+        {:ok, conn_pid} = conn.start([{:pid, self} | args])
         true = Process.link(conn_pid)
-
-        state = %{@initial_state | jid: jid, conn: conn, conn_pid: conn_pid, password: password}
+        
+        state = %{@initial_state | jid: jid, conn: conn, conn_pid: conn_pid,
+                  password: password, opts: opts}
         
         state |> start_stream(jid)
         
@@ -93,6 +95,11 @@ defmodule Jabber.Component do
       def handle_info(xmlel() = xml, statename, state) do
         stanza = Stanza.new(xml)
         state = stanza_received(state, stanza)
+        {:next_state, statename, state}
+      end
+
+      def handle_event({:send, stanza}, statename, %{conn: conn, conn_pid: conn_pid} = state) do
+        :ok = conn.send(conn_pid, Stanza.to_xml(stanza))
         {:next_state, statename, state}
       end
       

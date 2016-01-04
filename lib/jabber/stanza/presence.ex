@@ -2,6 +2,6 @@ defmodule Jabber.Stanza.Presence do
 
   use Jabber.Xml
   
-  defstruct attrs: [], children: []
+  defstruct(to: nil, from: nil, type: nil, attrs: [], children: [])
   
 end

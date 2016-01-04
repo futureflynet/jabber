@@ -34,8 +34,8 @@ defmodule JabberStanzaTest do
     msg = Stanza.new(msg_xml)
 
     assert msg.id   == nil
-    assert msg.to   == "to@test.host"
-    assert msg.from == "from@test.host"
+    assert msg.to   == Jid.new "to@test.host"
+    assert msg.from == Jid.new "from@test.host"
     assert msg.type == "chat"
     assert msg.body == "content"
   end
@@ -77,29 +77,41 @@ defmodule JabberStanzaTest do
     iq = Stanza.new(iq_xml)
 
     assert iq.id       == "test_id"
-    assert iq.to       == "to@test.host"
-    assert iq.from     == "from@test.host"
+    assert iq.to       == Jid.new "to@test.host"
+    assert iq.from     == Jid.new "from@test.host"
     assert iq.type     == "get"
     assert iq.children != []
   end
 
   test "iq to result" do
-    iq = %Iq{id: "test_id", to: "to@test.host",
-             from: "from@test.host", type: "set",
+    iq = %Iq{id: "test_id", to: Jid.new("to@test.host"),
+             from: Jid.new("from@test.host"), type: "set",
              children: [xmlel(name: "vCard", attrs: [{"xmlns", "vcard-temp"}])]}
     result_iq = Iq.to_result(iq, xmlel(name: "FN", children: [xmlcdata(content: "name")]))
 
-    assert result_iq.to       == "from@test.host"
-    assert result_iq.from     == "to@test.host"
+    assert result_iq.to       == Jid.new "from@test.host"
+    assert result_iq.from     == Jid.new "to@test.host"
     assert result_iq.type     == "result"
     assert result_iq.id       == "test_id"
     assert result_iq.children != []
   end
   
   test "presence to xml" do
+    # initial presence
     presence_xml = %Presence{} |> Stanza.to_xml
     assert Record.is_record(presence_xml, :xmlel)
-    assert xmlel(presence_xml, :name) == "presence"
+    {:xmlel, "presence", [], []} = presence_xml
+
+    presence_xml = %Presence{type: "subscribe"} |> Stanza.to_xml
+    assert Record.is_record(presence_xml, :xmlel)
+    {"type", "subscribe"} = List.keyfind(xmlel(presence_xml, :attrs), "type", 0)
+  end
+
+  test "presence from xml" do
+    presence_xml = xmlel(name: "presence", attrs: [{"type", "probe"}])
+    presence = Stanza.new(presence_xml)
+
+    assert presence.type == "probe"
   end
   
 end
