@@ -5,10 +5,9 @@ defmodule Jabber.Component do
   @callback stanza_received(state :: term, stanza :: term) :: {:ok, term}
   
   defmacro __using__(_opts) do
-    quote do
+    quote location: :keep do
 
-      @behaviour :gen_fsm
-      
+      use GenServer
       use Jabber.Xml
 
       alias Jabber.Stanza
@@ -21,55 +20,27 @@ defmodule Jabber.Component do
                        password: nil, opts: []}
 
       def start_link(args) do
-        :gen_fsm.start_link(__MODULE__, args, [])
+        GenServer.start_link(__MODULE__, args)
       end
 
       ## component behaviour callbacks
       
       def stream_started(state) do
         # override this
-        {:ok, state}
+        state
       end
-
+      
       def stream_authenticated(state) do
         # override this
-        {:ok, state}
+        state
       end
       
       def stanza_received(state, _stanza) do
         # override this
-        {:ok, state}
+        state
       end
       
-      ## event callbacks
-
-      def connected(:timeout, state) do
-        {:ok, state} = wait_for_stream(state)
-        {:next_state, :stream_started, state, 0}
-      end
-      
-      def stream_started(:timeout, state) do
-        case stream_started(state) do
-          {:ok, state} ->
-            {:next_state, :authenticating, state, 0}
-          {:ok, state, next_state} ->
-            {:next_state, next_state, state, 0}
-          {:stop, reason, state} ->
-            {:stop, reason, state}
-        end
-      end
-      
-      def authenticating(:timeout, state) do
-        case do_handshake(state) do
-          {:ok, state} ->
-            {:ok, state} = stream_authenticated(state)
-            {:next_state, :authenticated, state}
-          {:error, reason} ->
-            {:stop, reason, state}
-        end
-      end
-      
-      ## :gen_fsm API
+      ## GenServer API
 
       def init(args) do
         jid      = Keyword.fetch!(args, :jid)
@@ -87,23 +58,26 @@ defmodule Jabber.Component do
         state = %{@initial_state | jid: jid, conn: conn, conn_pid: conn_pid,
                   password: password, opts: opts}
         
-        state |> start_stream(jid)
+        state
+        |> start_stream(jid)
+        |> wait_for_stream
+        |> do_handshake
         
-        {:ok, :connected, state, 0}
+        {:ok, state}
       end
       
-      def handle_info(xmlel() = xml, statename, state) do
+      def handle_info(xmlel() = xml, state) do
         stanza = Stanza.new(xml)
         state = stanza_received(state, stanza)
-        {:next_state, statename, state}
+        {:noreply, state}
       end
 
-      def handle_event({:send, stanza}, statename, %{conn: conn, conn_pid: conn_pid} = state) do
+      def handle_info({:send, stanza}, %{conn: conn, conn_pid: conn_pid} = state) do
         :ok = conn.send(conn_pid, Stanza.to_xml(stanza))
-        {:next_state, statename, state}
+        {:noreply, state}
       end
       
-      def terminate(_reason, _statename, %{conn: conn, conn_pid: conn_pid} = state) do
+      def terminate(_reason, %{conn: conn, conn_pid: conn_pid} = state) do
         stream_xml = Stanza.stream_end
         :ok = conn.send(conn_pid, stream_xml)
       end
@@ -113,6 +87,7 @@ defmodule Jabber.Component do
       defp start_stream(%{conn: conn, conn_pid: conn_pid} = state, jid) do
         stream_xml = Stanza.stream_start(jid, @stream_ns)
         :ok = conn.send(conn_pid, stream_xml)
+        state
       end
       
       defp do_handshake(%{conn: conn, conn_pid: conn_pid, password: password} = state) do
@@ -126,7 +101,7 @@ defmodule Jabber.Component do
         :ok = conn.send(conn_pid, handshake_xml)
         case recv() do
           {:ok, xmlel(name: "handshake")} ->
-            {:ok, state}
+            stream_authenticated(state)
           {:error, error} ->
             {:error, error}
         end
@@ -136,12 +111,13 @@ defmodule Jabber.Component do
         receive do
           xmlstreamstart(attrs: attrs) ->
             {"id", stream_id} = List.keyfind(attrs, "id", 0)
-            {:ok, %{state | stream_id: stream_id}}
+            state = %{state | stream_id: stream_id}
+            stream_started(state)
           _ ->
             wait_for_stream(state)
         end
       end
-
+      
       defp recv() do
         receive do
           xmlel() = element ->
