@@ -1,8 +1,8 @@
 defmodule Jabber.Component do
 
-  @callback stream_started(state :: term) :: {:ok, term}
-  @callback stream_authenticated(state :: term) :: {:ok, term}
-  @callback stanza_received(state :: term, stanza :: term) :: {:ok, term}
+  @callback stream_started(state :: term) :: term
+  @callback stream_authenticated(state :: term) :: term
+  @callback stanza_received(state :: term, stanza :: term) :: term
   
   defmacro __using__(_opts) do
     quote location: :keep do
@@ -45,9 +45,12 @@ defmodule Jabber.Component do
       def init(args) do
         jid      = Keyword.fetch!(args, :jid)
         password = Keyword.fetch!(args, :password)
-        conn     = Keyword.fetch!(args, :conn)
-        opts     = Keyword.fetch!(args, :opts)
 
+        opts     = Keyword.get(args, :opts, [])
+        conn     = Keyword.get(args, :conn, Jabber.Connection)
+
+        Logger.debug "Jabber.Component starting using args #{inspect args}."
+        
         # trap exits
         Process.flag(:trap_exit, true)
         
@@ -58,11 +61,11 @@ defmodule Jabber.Component do
         state = %{@initial_state | jid: jid, conn: conn, conn_pid: conn_pid,
                   password: password, opts: opts}
         
-        state
+        state = state
         |> start_stream(jid)
         |> wait_for_stream
         |> do_handshake
-        
+
         {:ok, state}
       end
       
@@ -102,7 +105,7 @@ defmodule Jabber.Component do
         case recv() do
           {:ok, xmlel(name: "handshake")} ->
             stream_authenticated(state)
-          {:error, error} ->
+          {:ok, xmlel(name: "stream:error") = error} ->
             {:error, error}
         end
       end
