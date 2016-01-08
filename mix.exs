@@ -14,7 +14,7 @@ defmodule Jabber.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger],
+    [applications: [:logger, :exml],
      mod: {Jabber, []}]
   end
 
