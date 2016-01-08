@@ -75,7 +75,7 @@ defmodule Jabber.Component do
         {:noreply, state}
       end
 
-      def handle_info({:send, stanza}, %{conn: conn, conn_pid: conn_pid} = state) do
+      def handle_cast({:send, stanza}, %{conn: conn, conn_pid: conn_pid} = state) do
         :ok = conn.send(conn_pid, Stanza.to_xml(stanza))
         {:noreply, state}
       end
