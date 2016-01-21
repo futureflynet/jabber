@@ -17,7 +17,9 @@ defmodule Jabber.Component do
       @stream_ns     "jabber:component:accept"
       @initial_state %{conn: nil, conn_pid: nil,
                        jid: nil, stream_id: nil,
-                       password: nil, opts: []}
+                       password: nil, opts: [],
+                       reconnect: nil, host: nil,
+                       port: nil}
 
       def start_link(args) do
         GenServer.start_link(__MODULE__, args)
@@ -43,30 +45,32 @@ defmodule Jabber.Component do
       ## GenServer API
 
       def init(args) do
-        jid      = Keyword.fetch!(args, :jid)
-        password = Keyword.fetch!(args, :password)
+        jid       = Keyword.fetch!(args, :jid)
+        password  = Keyword.fetch!(args, :password)
+        host      = Keyword.get(args, :host, "localhost") |> String.to_char_list
+        port      = Keyword.get(args, :port, 8888)
 
-        opts     = Keyword.get(args, :opts, [])
-        conn     = Keyword.get(args, :conn, Jabber.Connection)
+        opts      = Keyword.get(args, :opts, [])
+        conn      = Keyword.get(args, :conn, Jabber.Connection)
+        reconnect = Keyword.get(args, :reconnect, 5000)
 
         Logger.debug "Jabber.Component starting using args #{inspect args}."
         
         # trap exits
         Process.flag(:trap_exit, true)
         
-        # start connection and link to it
-        {:ok, conn_pid} = conn.start([{:pid, self} | args])
-        true = Process.link(conn_pid)
-        
-        state = %{@initial_state | jid: jid, conn: conn, conn_pid: conn_pid,
-                  password: password, opts: opts}
-        
-        state = state
-        |> start_stream(jid)
-        |> wait_for_stream
-        |> do_handshake
+        state = %{@initial_state | jid: jid, conn: conn,
+                  password: password, opts: opts, reconnect: reconnect,
+                  host: host, port: port}
 
-        {:ok, state}
+        # connect
+        case connect(state) do
+          {:ok, state} ->
+            {:ok, state}
+          {:error, reason} ->
+            Process.send_after(self, :reconnect, reconnect)
+            {:ok, state}
+        end
       end
       
       def handle_info(xmlel() = xml, state) do
@@ -75,6 +79,25 @@ defmodule Jabber.Component do
         {:noreply, state}
       end
 
+      def handle_info(:reconnect, state) do
+        case connect(state) do
+          {:ok, state} ->
+            {:noreply, state}
+          {:error, reason} ->
+            Process.send_after(self, :reconnect, state.reconnect)
+            {:noreply, state}
+        end
+      end
+      
+      def handle_info({:EXIT, pid, reason}, state) do
+        reconnect = state[:reconnect]
+        if reconnect > 0 do
+          Logger.info "Connection lost. Reconnecting..."
+          Process.send_after(self, :reconnect, reconnect)
+        end
+        {:noreply, state}
+      end
+      
       def handle_cast({:send, stanza}, %{conn: conn, conn_pid: conn_pid} = state) do
         :ok = conn.send(conn_pid, Stanza.to_xml(stanza))
         {:noreply, state}
@@ -86,8 +109,27 @@ defmodule Jabber.Component do
       end
 
       ## private API
+
+      defp connect(state) do
+        conn = state[:conn]
+        args = [host: state.host, port: state.port, jid: state.jid, pid: self]
+        # start connection and link to it
+        case conn.start(args) do
+          {:ok, conn_pid} ->
+            true = Process.link(conn_pid)
+
+            state = %{state | conn_pid: conn_pid}
+            |> start_stream
+            |> wait_for_stream
+            |> do_handshake
+
+            {:ok, state}
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end
       
-      defp start_stream(%{conn: conn, conn_pid: conn_pid} = state, jid) do
+      defp start_stream(%{conn: conn, conn_pid: conn_pid, jid: jid} = state) do
         stream_xml = Stanza.stream_start(jid, @stream_ns)
         :ok = conn.send(conn_pid, stream_xml)
         state

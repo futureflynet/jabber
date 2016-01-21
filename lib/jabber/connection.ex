@@ -28,22 +28,29 @@ defmodule Jabber.Connection do
   
   def init(opts) do
     jid       = Keyword.fetch!(opts, :jid)
-    host      = Keyword.get(opts, :host, "localhost") |> String.to_char_list
-    port      = Keyword.get(opts, :port, 8888)
+    host      = Keyword.fetch!(opts, :host)
+    port      = Keyword.fetch!(opts, :port)
     pid       = Keyword.fetch!(opts, :pid)
     state     = @initial_state
 
     # trap exits
     Process.flag(:trap_exit, true)
+
+    Logger.info "Component #{jid} connecting to #{host}:#{port}."
     
     socket_opts = [{:active, :once}, :binary, {:packet, 0}]
-    {:ok, socket} = :gen_tcp.connect(host, port, socket_opts)
-    {:ok, parser} = :exml_stream.new_parser
-    state = %{state | socket: socket, component_pid: pid, parser: parser}
+    case :gen_tcp.connect(host, port, socket_opts) do
+      {:ok, socket} ->
+        {:ok, parser} = :exml_stream.new_parser
+        state = %{state | socket: socket, component_pid: pid, parser: parser}
     
-    Logger.info "Component #{jid} connected to #{host}:#{port}."
+        Logger.info "Component #{jid} connected to #{host}:#{port}."
     
-    {:ok, :connected, state}
+        {:ok, :connected, state}
+      {:error, reason} ->
+        Logger.error "Component #{jid} failed to connect to #{host}:#{port}. reason=#{inspect reason}"
+        {:stop, reason}
+    end
   end
 
   def handle_info({:tcp, socket, data}, statename, %{component_pid: pid} = state) do
