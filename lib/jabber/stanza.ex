@@ -107,7 +107,7 @@ defmodule Jabber.Stanza do
 
   defp add_child(children, _name, nil), do: children
   defp add_child(children, name, content) do
-    child_xml = xmlel(name: name, children: [xmlcdata(content: content)])
+    child_xml = xmlel(name: name, children: [:exml.escape_cdata(content)])
     [child_xml|children]
   end
   
