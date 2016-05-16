@@ -3,6 +3,7 @@ defmodule Jabber.Component do
   @callback stream_started(state :: term) :: term
   @callback stream_authenticated(state :: term) :: term
   @callback stanza_received(state :: term, stanza :: term) :: term
+  @callback will_terminate(reason :: term, state :: term) :: term
   
   defmacro __using__(_opts) do
     quote location: :keep do
@@ -38,6 +39,11 @@ defmodule Jabber.Component do
       end
       
       def stanza_received(state, _stanza) do
+        # override this
+        state
+      end
+
+      def will_terminate(_reason, state) do
         # override this
         state
       end
@@ -103,7 +109,8 @@ defmodule Jabber.Component do
         {:noreply, state}
       end
       
-      def terminate(_reason, %{conn: conn, conn_pid: conn_pid} = state) do
+      def terminate(reason, %{conn: conn, conn_pid: conn_pid} = state) do
+        state = will_terminate(reason, state)
         stream_xml = Stanza.stream_end
         :ok = conn.send(conn_pid, stream_xml)
       end
