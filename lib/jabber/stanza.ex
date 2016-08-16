@@ -17,12 +17,12 @@ defmodule Jabber.Stanza do
   def stream_end do
     xmlstreamend(name: "stream:stream")
   end
-
+  
   def new(xmlel(name: "message", attrs: attrs, children: children) = xml) do
     {"id", id}       = List.keyfind(attrs, "id", 0, {"id", nil})
     {"to", to}       = List.keyfind(attrs, "to", 0, {"to", nil})
     {"from", from}   = List.keyfind(attrs, "from", 0, {"from", nil})
-    {"type", type}   = List.keyfind(attrs, "type", 0, {"type", nil})
+    {"type", type}   = List.keyfind(attrs, "type", 0, {"type", "normal"})
     
     attrs = List.keydelete(attrs, "id", 0)
     attrs = List.keydelete(attrs, "to", 0)
@@ -35,7 +35,7 @@ defmodule Jabber.Stanza do
     %Message{id: id, to: Jid.new(to), from: Jid.new(from), type: type, body: body,
              thread: thread, attrs: attrs, children: children}
   end
-
+  
   def new(xmlel(name: "presence", attrs: attrs, children: children)) do
     {"to", to}     = List.keyfind(attrs, "to", 0, {"to", nil})
     {"from", from} = List.keyfind(attrs, "from", 0, {"from", nil})

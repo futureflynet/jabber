@@ -39,6 +39,20 @@ defmodule JabberStanzaTest do
     assert msg.type == "chat"
     assert msg.body == "content"
   end
+  
+  test "message from xml not type" do
+    msg_xml = xmlel(name: "message",
+                    attrs: [{"to", "to@test.host"},
+                            {"from", "from@test.host"}],
+                    children: [xmlel(name: "body", children: [xmlcdata(content: "content")])])
+    msg = Stanza.new(msg_xml)
+
+    assert msg.id   == nil
+    assert msg.to   == Jid.new "to@test.host"
+    assert msg.from == Jid.new "from@test.host"
+    assert msg.type == "normal"
+    assert msg.body == "content"
+  end
 
   test "message attributes" do
     msg = %Message{attrs: [{"to", "to@test.host"}]}
