@@ -4,7 +4,7 @@ defmodule Jabber.Stanza.Message do
 
   alias Jabber.Stanza.Message
   
-  defstruct(id: nil, to: nil, from: nil, type: "chat",
+  defstruct(id: nil, to: nil, from: nil, type: "normal",
             body: nil, thread: nil, attrs: [], children: [])
 
   def receipt(msg) do

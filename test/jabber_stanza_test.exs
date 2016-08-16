@@ -22,7 +22,7 @@ defmodule JabberStanzaTest do
     {"id", "test_id"}          = List.keyfind(attrs, "id", 0)
     {"to", "to@test.host"}     = List.keyfind(attrs, "to", 0)
     {"from", "from@test.host"} = List.keyfind(attrs, "from", 0)
-    {"type", "chat"}           = List.keyfind(attrs, "type", 0)
+    {"type", "normal"}         = List.keyfind(attrs, "type", 0)
   end
 
   test "message from xml" do
@@ -43,14 +43,14 @@ defmodule JabberStanzaTest do
   test "message attributes" do
     msg = %Message{attrs: [{"to", "to@test.host"}]}
     msg_xml = Stanza.to_xml(msg)
-    assert msg_xml == xmlel(name: "message", attrs: [{"type", "chat"}])
+    assert msg_xml == xmlel(name: "message", attrs: [{"type", "normal"}])
     
     msg = %Message{to: "to@test.host", from: "from@test.host", id: "test_id",
                    attrs: [{"to", "to"}, {"from", "from"}, {"id", "id"}]}
     msg_xml = Stanza.to_xml(msg)
     assert msg_xml == {:xmlel, "message",
                        [{"from", "from@test.host"}, {"id", "test_id"},
-                        {"to", "to@test.host"}, {"type", "chat"}], []}
+                        {"to", "to@test.host"}, {"type", "normal"}], []}
   end
   
   test "iq to xml" do
