@@ -90,7 +90,6 @@ defmodule Jabber.Component do
           {:ok, state} ->
             {:noreply, state}
           {:error, reason} ->
-            Process.send_after(self, :reconnect, state.reconnect)
             {:noreply, state}
         end
       end
@@ -125,13 +124,12 @@ defmodule Jabber.Component do
           {:ok, conn_pid} ->
             true = Process.link(conn_pid)
 
-            state = %{state | conn_pid: conn_pid}
+            result = %{state | conn_pid: conn_pid}
             |> start_stream
             |> wait_for_stream
             |> do_handshake
-
-            {:ok, state}
           {:error, reason} ->
+            Process.send_after(self, :reconnect, state.reconnect)
             {:error, reason}
         end
       end
@@ -141,7 +139,8 @@ defmodule Jabber.Component do
         :ok = conn.send(conn_pid, stream_xml)
         state
       end
-      
+
+      defp do_handshake({:error, reason}), do: {:error, reason}
       defp do_handshake(%{conn: conn, conn_pid: conn_pid, password: password} = state) do
         content = :crypto.hash(:sha, "#{state.stream_id}#{password}")
         |> Base.encode16
@@ -153,12 +152,12 @@ defmodule Jabber.Component do
         :ok = conn.send(conn_pid, handshake_xml)
         case recv() do
           {:ok, xmlel(name: "handshake")} ->
-            stream_authenticated(state)
+            {:ok, stream_authenticated(state)}
           {:ok, xmlel(name: "stream:error") = error} ->
             {:error, error}
         end
       end
-
+      
       defp wait_for_stream(state) do
         receive do
           xmlstreamstart(attrs: attrs) ->
@@ -167,6 +166,10 @@ defmodule Jabber.Component do
             stream_started(state)
           _ ->
             wait_for_stream(state)
+        after
+          5_000 ->
+            Kernel.send(self, :reconnect)
+            {:error, :stream_timeout}
         end
       end
       
