@@ -32,9 +32,12 @@ defmodule Jabber.Stanza do
     body   = get_child(xml, "body") |> get_cdata
     nick   = get_child(xml, "nick") |> get_cdata
     thread = get_child(xml, "thread") |> get_cdata
+    move   = get_child(xml, "animationMove") |> get_cdata
+    target = get_child(xml, "animationTarget") |> get_cdata
 
     %Message{id: id, to: Jid.new(to), from: Jid.new(from), type: type, body: body,
-             thread: thread, attrs: attrs, children: children, nick: nick}
+             thread: thread, attrs: attrs, children: children, nick: nick,
+             animationMove: move, animationTarget: target}
   end
 
   def new(xmlel(name: "presence", attrs: attrs, children: children)) do
