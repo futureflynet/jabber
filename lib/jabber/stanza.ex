@@ -78,7 +78,8 @@ defmodule Jabber.Stanza do
   def to_xml(stanza), do: stanza_to_xml(stanza)
 
   defp stanza_to_xml(%Message{} = msg) do
-    attrs = attrs_to_binary(msg.attrs, %{"id": msg.id, "to": msg.to, "from": msg.from, "type": msg.type, "karmaUpdate": msg.karmaUpdate})
+    attrs = attrs_to_binary(msg.attrs, %{"id" => msg.id, "to" => msg.to, "from" => msg.from,
+                                         "type" => msg.type, "karmaUpdate" => msg.karmaUpdate})
     children = msg.children
     |> add_child("body", msg.body)
     |> add_child("thread", msg.thread)
@@ -86,12 +87,12 @@ defmodule Jabber.Stanza do
   end
 
   defp stanza_to_xml(%Presence{} = presence) do
-    attrs = attrs_to_binary(presence.attrs, %{"id": nil, "to": presence.to, "from": presence.from, "type": presence.type})
+    attrs = attrs_to_binary(presence.attrs, %{"id" => nil, "to" => presence.to, "from" => presence.from, "type" => presence.type})
     xmlel(name: "presence", attrs: attrs, children: presence.children)
   end
 
   defp stanza_to_xml(%Iq{} = iq) do
-    attrs = attrs_to_binary(iq.attrs, %{"id": iq.id, "to": iq.to, "from": iq.from, "type": iq.type})
+    attrs = attrs_to_binary(iq.attrs, %{"id" => iq.id, "to" => iq.to, "from" => iq.from, "type" => iq.type})
     xmlel(name: "iq", attrs: attrs, children: iq.children)
   end
 
