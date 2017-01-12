@@ -23,11 +23,13 @@ defmodule Jabber.Stanza do
     {"to", to}       = List.keyfind(attrs, "to", 0, {"to", nil})
     {"from", from}   = List.keyfind(attrs, "from", 0, {"from", nil})
     {"type", type}   = List.keyfind(attrs, "type", 0, {"type", "normal"})
+    {"karmaUpdate", karma_update} = List.keyfind(attrs, "karmaUpdate", 0, {"karmaUpdate", ""})
 
     attrs = List.keydelete(attrs, "id", 0)
     attrs = List.keydelete(attrs, "to", 0)
     attrs = List.keydelete(attrs, "from", 0)
     attrs = List.keydelete(attrs, "type", 0)
+    attrs = List.keydelete(attrs, "karmaUpdate", 0)
 
     body        = get_child(xml, "body") |> get_cdata
     nick        = get_child(xml, "nick") |> get_cdata
@@ -35,7 +37,6 @@ defmodule Jabber.Stanza do
     move        = get_child(xml, "animationMove") |> get_cdata
     target      = get_child(xml, "animationTargetId") |> get_cdata
     target_nick = get_child(xml, "animationTargetNick") |> get_cdata
-    karma_update = get_child(xml, "karmaUpdate") |> get_cdata
 
     %Message{id: id, to: Jid.new(to), from: Jid.new(from), type: type, body: body,
              thread: thread, attrs: attrs, children: children, nick: nick,
