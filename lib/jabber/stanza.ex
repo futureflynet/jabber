@@ -78,7 +78,7 @@ defmodule Jabber.Stanza do
   def to_xml(stanza), do: stanza_to_xml(stanza)
 
   defp stanza_to_xml(%Message{} = msg) do
-    attrs = attrs_to_binary(msg.attrs, msg.id, msg.to, msg.from, msg.type)
+    attrs = attrs_to_binary(msg.attrs, msg.id, msg.to, msg.from, msg.type, msg.karmaUpdate)
 
     children = msg.children
     |> add_child("body", msg.body)
@@ -103,13 +103,14 @@ defmodule Jabber.Stanza do
 
   ## private API
 
-  defp attrs_to_binary(attrs, id, to, from, type) do
+  defp attrs_to_binary(attrs, id, to, from, type, karma) do
     attrs
     |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
     |> Map.put("id", id)
     |> Map.put("to", to)
     |> Map.put("from", from)
     |> Map.put("type", type)
+    |> Map.put("karmaUpdate", karma)
     |> Enum.filter(fn {_k, v} -> v != nil and v != "" end)
   end
 
