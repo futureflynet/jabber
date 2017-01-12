@@ -78,22 +78,20 @@ defmodule Jabber.Stanza do
   def to_xml(stanza), do: stanza_to_xml(stanza)
 
   defp stanza_to_xml(%Message{} = msg) do
-    attrs = attrs_to_binary(msg.attrs, msg.id, msg.to, msg.from, msg.type, msg.karmaUpdate)
-
+    attrs = attrs_to_binary(msg.attrs, %{id: msg.id, to: msg.to, from: msg.from, type: msg.type, karmaUpdate: msg.karmaUpdate})
     children = msg.children
     |> add_child("body", msg.body)
     |> add_child("thread", msg.thread)
-
     xmlel(name: "message", attrs: attrs, children: children)
   end
 
   defp stanza_to_xml(%Presence{} = presence) do
-    attrs = attrs_to_binary(presence.attrs, nil, presence.to, presence.from, presence.type)
+    attrs = attrs_to_binary(presence.attrs, %{id: nil, to: presence.to, from: presence.from, type: presence.type})
     xmlel(name: "presence", attrs: attrs, children: presence.children)
   end
 
   defp stanza_to_xml(%Iq{} = iq) do
-    attrs = attrs_to_binary(iq.attrs, iq.id, iq.to, iq.from, iq.type)
+    attrs = attrs_to_binary(iq.attrs, %{id: iq.id, to: iq.to, from: iq.from, type: iq.type})
     xmlel(name: "iq", attrs: attrs, children: iq.children)
   end
 
@@ -103,14 +101,10 @@ defmodule Jabber.Stanza do
 
   ## private API
 
-  defp attrs_to_binary(attrs, id, to, from, type, karma) do
+  defp attrs_to_binary(attrs, new_attrs) do
     attrs
     |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
-    |> Map.put("id", id)
-    |> Map.put("to", to)
-    |> Map.put("from", from)
-    |> Map.put("type", type)
-    |> Map.put("karmaUpdate", karma)
+    |> Map.merge(new_attrs)
     |> Enum.filter(fn {_k, v} -> v != nil and v != "" end)
   end
 
