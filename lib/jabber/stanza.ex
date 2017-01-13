@@ -23,13 +23,13 @@ defmodule Jabber.Stanza do
     {"to", to}       = List.keyfind(attrs, "to", 0, {"to", nil})
     {"from", from}   = List.keyfind(attrs, "from", 0, {"from", nil})
     {"type", type}   = List.keyfind(attrs, "type", 0, {"type", "normal"})
-    {"karmaUpdate", karma_update} = List.keyfind(attrs, "karmaUpdate", 0, {"karmaUpdate", ""})
+    {"updateNotification", notification} = List.keyfind(attrs, "updateNotification", 0, {"updateNotification", ""})
 
     attrs = List.keydelete(attrs, "id", 0)
     attrs = List.keydelete(attrs, "to", 0)
     attrs = List.keydelete(attrs, "from", 0)
     attrs = List.keydelete(attrs, "type", 0)
-    attrs = List.keydelete(attrs, "karmaUpdate", 0)
+    attrs = List.keydelete(attrs, "updateNotification", 0)
 
     body        = get_child(xml, "body") |> get_cdata
     nick        = get_child(xml, "nick") |> get_cdata
@@ -41,7 +41,7 @@ defmodule Jabber.Stanza do
     %Message{id: id, to: Jid.new(to), from: Jid.new(from), type: type, body: body,
              thread: thread, attrs: attrs, children: children, nick: nick,
              animationMove: move, animationTargetId: target, animationTargetNick: target_nick,
-             karmaUpdate: karma_update}
+             updateNotification: notification}
   end
 
   def new(xmlel(name: "presence", attrs: attrs, children: children)) do
@@ -79,7 +79,7 @@ defmodule Jabber.Stanza do
 
   defp stanza_to_xml(%Message{} = msg) do
     attrs = attrs_to_binary(msg.attrs, %{"id" => msg.id, "to" => msg.to, "from" => msg.from,
-                                         "type" => msg.type, "karmaUpdate" => msg.karmaUpdate})
+                                         "type" => msg.type, "updateNotification" => msg.updateNotification})
     children = msg.children
     |> add_child("body", msg.body)
     |> add_child("thread", msg.thread)
